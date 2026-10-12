@@ -36,6 +36,27 @@ COPY . .
 
 RUN npm run build:backend
 
+# Plugin repos built in place of their pinned releases. Empty unless the
+# build is given another folder under this name:
+#   docker build --build-context plugins=../Termix-Plugins ...
+FROM scratch AS plugins
+COPY docker/local-plugins.md /README.md
+
+# Stage 3b: Stage the plugins, building each repo in "plugins" with this
+# checkout's SDK. Repos come without node_modules or dist, since those may
+# be from another platform.
+FROM backend-builder AS plugins-builder
+WORKDIR /app
+
+COPY --from=plugins / /local-plugins/
+
+RUN for repo in /local-plugins/*/; do \
+      [ -f "$repo/manifest.json" ] || continue; \
+      rm -rf "$repo/node_modules" "$repo/dist"; \
+      (cd "$repo" && npm ci --ignore-scripts --no-audit --no-fund) || exit 1; \
+    done && \
+    node scripts/build-plugins.cjs --local /local-plugins
+
 # Stage 4: Download OPKSSH binary for the target platform so the image works offline
 FROM node:24-slim AS opkssh-downloader
 ARG TARGETARCH
@@ -112,9 +133,9 @@ COPY --chown=node:node --from=frontend-builder /app/dist /app/html
 
 COPY --chown=node:node --from=production-deps /app/node_modules /app/node_modules
 COPY --chown=node:node --from=backend-builder /app/dist/backend ./dist/backend
-# Plugins pinned in docker/bundled-plugins.json, resolved as dist/plugins by
-# getBundledPluginsDir().
-COPY --chown=node:node --from=backend-builder /app/dist/plugins ./dist/plugins
+# Plugins pinned in docker/bundled-plugins.json, plus any built from the
+# "plugins" build context, resolved as dist/plugins by getBundledPluginsDir().
+COPY --chown=node:node --from=plugins-builder /app/dist/plugins ./dist/plugins
 # Target of node_modules/@termix-ssh/plugin-sdk, which core and the plugins import.
 COPY --chown=node:node --from=backend-builder /app/packages/plugin-sdk/package.json ./packages/plugin-sdk/package.json
 COPY --chown=node:node --from=backend-builder /app/packages/plugin-sdk/dist ./packages/plugin-sdk/dist
