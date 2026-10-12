@@ -30,6 +30,12 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 }
 
 function legacyCopy(text: string): boolean {
+  // select() moves focus to the hidden textarea. Hand it back, or a terminal
+  // copying on its own behalf stops receiving keys.
+  const previousFocus =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
   try {
     const textarea = document.createElement("textarea");
     textarea.value = text;
@@ -44,6 +50,8 @@ function legacyCopy(text: string): boolean {
     return ok;
   } catch {
     return false;
+  } finally {
+    previousFocus?.focus({ preventScroll: true });
   }
 }
 
