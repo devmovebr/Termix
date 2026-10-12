@@ -1,18 +1,23 @@
 import { useTranslation } from "react-i18next";
-import { tabJumpHotkeyKeys } from "@/lib/tab-jump-hotkey";
+import { isMacPlatform, tabJumpHotkeyKeys } from "@/lib/tab-jump-hotkey";
+import { appShortcutModifierLabel } from "@/lib/app-shortcut-chord";
 
 /** Shortcuts the shell handles itself; they cannot be rebound. */
 export function fixedShortcuts(): Array<{ keys: string[]; labelKey: string }> {
+  const mod = appShortcutModifierLabel();
   return [
-    { keys: ["Ctrl", "Shift", "\\"], labelKey: "splitRight" },
-    { keys: ["Ctrl", "Shift", "-"], labelKey: "splitDown" },
-    { keys: ["Ctrl", "Shift", "Enter"], labelKey: "zoomPane" },
-    { keys: ["Alt", "↑↓←→"], labelKey: "navigatePane" },
-    { keys: ["Ctrl", "Shift", "]"], labelKey: "nextTab" },
-    { keys: ["Ctrl", "Shift", "["], labelKey: "previousTab" },
+    { keys: [mod, "Shift", "\\"], labelKey: "splitRight" },
+    { keys: [mod, "Shift", "-"], labelKey: "splitDown" },
+    { keys: [mod, "Shift", "Enter"], labelKey: "zoomPane" },
+    {
+      keys: [isMacPlatform() ? "Option" : "Alt", "↑↓←→"],
+      labelKey: "navigatePane",
+    },
+    { keys: [mod, "Shift", "]"], labelKey: "nextTab" },
+    { keys: [mod, "Shift", "["], labelKey: "previousTab" },
     { keys: tabJumpHotkeyKeys(), labelKey: "jumpTab" },
-    { keys: ["Ctrl", "Shift", "E"], labelKey: "previousView" },
-    { keys: ["Ctrl", "Shift", "F"], labelKey: "fullscreen" },
+    { keys: [mod, "Shift", "E"], labelKey: "previousView" },
+    { keys: [mod, "Shift", "F"], labelKey: "fullscreen" },
   ];
 }
 

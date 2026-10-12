@@ -125,6 +125,7 @@ import type {
 import { applyAccentColor, applyFontSize } from "@/lib/theme";
 import { globalShortcutHandler } from "@/lib/global-shortcut-handler";
 import { getTabJumpDigit } from "@/lib/tab-jump-hotkey";
+import { isAppShortcutChord } from "@/lib/app-shortcut-chord";
 import { useTheme } from "@/components/theme-provider";
 import {
   getSSHHosts,
@@ -786,7 +787,7 @@ export function AppShell({
   }, [railView]);
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!e.ctrlKey || !e.shiftKey || e.altKey || e.code !== "KeyE") return;
+      if (!isAppShortcutChord(e) || e.code !== "KeyE") return;
       e.preventDefault();
       const previous = previousRailViewRef.current;
       if (!sidebarOpen) {
@@ -804,7 +805,7 @@ export function AppShell({
   // without going through synthetic DOM events (which are unreliable).
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey) {
+      if (isAppShortcutChord(e)) {
         if (e.code === "KeyF") {
           e.preventDefault();
           toggleAppFullscreen();
@@ -813,8 +814,8 @@ export function AppShell({
       }
 
       // Ctrl+Shift+\ splits right, Ctrl+Shift+- splits down, Ctrl+Shift+Enter
-      // zooms the focused pane.
-      if (e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey) {
+      // zooms the focused pane. Cmd+Shift works too on macOS.
+      if (isAppShortcutChord(e)) {
         if (e.code === "Backslash" || e.code === "Minus") {
           e.preventDefault();
           splitActionsRef.current?.splitActive(
@@ -858,8 +859,9 @@ export function AppShell({
         return;
       }
 
-      // Ctrl+Shift+] / Ctrl+Shift+[: cycle through open tabs (] = next, [ = previous)
-      if (e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey) {
+      // Ctrl+Shift+] / Ctrl+Shift+[ (Cmd+Shift on macOS): cycle through open
+      // tabs (] = next, [ = previous)
+      if (isAppShortcutChord(e)) {
         if (e.code === "BracketRight" || e.code === "BracketLeft") {
           e.preventDefault();
           const currentTabs = tabsRef.current.filter(
